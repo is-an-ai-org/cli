@@ -64,16 +64,7 @@ export async function deploy(name: string, directory?: string): Promise<void> {
   const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
   console.log(`Deploying ${files.size} files (${sizeMB} MB) to ${name}.is-an.ai...`);
 
-  // Try update first, fall back to create on 404
-  try {
-    await deployHosting(auth.jwt, name, files, true);
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("404")) {
-      await deployHosting(auth.jwt, name, files, false);
-    } else {
-      throw err;
-    }
-  }
+  await deployHosting(auth.jwt, name, files);
 
   console.log(`✓ Deployed to https://${name}.is-an.ai`);
 }

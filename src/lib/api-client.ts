@@ -64,33 +64,63 @@ export async function exchangeGithubToken(githubToken: string): Promise<{
   });
 }
 
+function getMimeType(filepath: string): string {
+  const ext = filepath.split(".").pop()?.toLowerCase();
+  const types: Record<string, string> = {
+    html: "text/html", css: "text/css", js: "application/javascript",
+    json: "application/json", png: "image/png", jpg: "image/jpeg",
+    jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml",
+    ico: "image/x-icon", webp: "image/webp", woff2: "font/woff2",
+    woff: "font/woff", txt: "text/plain", xml: "application/xml",
+    webmanifest: "application/manifest+json", wasm: "application/wasm",
+  };
+  return (ext && types[ext]) || "application/octet-stream";
+}
+
 export async function deployHosting(
   jwt: string,
   name: string,
-  files: Map<string, Buffer>,
-  isUpdate: boolean
+  files: Map<string, Buffer>
 ): Promise<HostingResponse> {
-  const formData = new FormData();
-  for (const [path, content] of files) {
-    formData.append(path, new Blob([new Uint8Array(content)]));
-  }
+  const encodedName = encodeURIComponent(name);
+  const fileEntries = Array.from(files.entries()).map(([path, content]) => ({
+    path,
+    content,
+    size: content.length,
+    contentType: getMimeType(path),
+  }));
 
-  const method = isUpdate ? "PUT" : "POST";
-  const res = await fetch(`${API_BASE}/v3/hosting/${encodeURIComponent(name)}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      "User-Agent": "is-an-ai-cli",
-    },
-    body: formData,
+  // Step 1: Get presigned upload URLs
+  const prepareRes = await request<{ uploadUrls: { path: string; url: string }[] }>(
+    `/v3/hosting/${encodedName}/prepare`,
+    {
+      method: "POST",
+      body: { files: fileEntries.map((f) => ({ path: f.path, size: f.size, contentType: f.contentType })) },
+      jwt,
+    }
+  );
+
+  // Step 2: Upload files directly to S3
+  const urlMap = new Map(prepareRes.uploadUrls.map((u) => [u.path, u.url]));
+  await Promise.all(
+    fileEntries.map(async (entry) => {
+      const uploadUrl = urlMap.get(entry.path);
+      if (!uploadUrl) throw new Error(`No upload URL for ${entry.path}`);
+      const res = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": entry.contentType },
+        body: new Uint8Array(entry.content),
+      });
+      if (!res.ok) throw new Error(`Upload failed for ${entry.path}: ${res.status}`);
+    })
+  );
+
+  // Step 3: Confirm deployment
+  return request<HostingResponse>(`/v3/hosting/${encodedName}/confirm`, {
+    method: "POST",
+    body: { files: fileEntries.map((f) => ({ path: f.path, size: f.size })) },
+    jwt,
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error((error as { message?: string }).message || `HTTP ${res.status}`);
-  }
-
-  return res.json() as Promise<HostingResponse>;
 }
 
 export async function getHosting(jwt: string, name: string): Promise<HostingStatus> {
