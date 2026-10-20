@@ -1,6 +1,6 @@
 {
   "name": "is-an-ai",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "CLI for registering and managing is-an.ai subdomains",
   "type": "module",
   "bin": {
@@ -22,7 +22,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "npm run build && node --test scripts/*.test.mjs"
   },
   "keywords": [
     "dns",
@@ -35,7 +36,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/is-an-ai/cli"
+    "url": "https://github.com/is-an-ai-org/cli"
   },
   "homepage": "https://is-an.ai",
   "dependencies": {

@@ -1,7 +1,7 @@
 import type { RecordFile } from "../types.js";
 
 const GITHUB_API = "https://api.github.com";
-const UPSTREAM_OWNER = "is-an-ai";
+const UPSTREAM_OWNER = "is-an-ai-org";
 const UPSTREAM_REPO = "is-an.ai";
 
 async function ghRequest<T>(

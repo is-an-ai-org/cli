@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import { login } from "./commands/login.js";
 import { logout } from "./commands/logout.js";
 import { check } from "./commands/check.js";
@@ -15,11 +16,12 @@ import { undeploy } from "./commands/undeploy.js";
 import type { AuthMode } from "./lib/auth.js";
 
 const program = new Command();
+const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 program
   .name("is-an-ai")
   .description("CLI for registering and managing is-an.ai subdomains")
-  .version("0.1.0");
+  .version(version);
 
 program
   .command("login")
