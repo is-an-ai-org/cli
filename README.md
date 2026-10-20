@@ -43,7 +43,7 @@ npx is-an-ai deploy my-project ./dist
 | `list` | List your subdomains (requires login) |
 | `login` | Authenticate with GitHub |
 | `logout` | Clear stored credentials |
-| `whoami` | Show current user |
+| `whoami` | Show the stored user only when the local API session has not expired |
 
 ## Two Modes
 
@@ -121,15 +121,15 @@ This CLI is available as a plugin for AI coding agents:
 
 - **Claude Code**:
   ```bash
-  /plugin marketplace add is-an-ai/cli
+  /plugin marketplace add is-an-ai-org/cli
   /plugin install is-an-ai
   ```
-- **OpenClaw**: `openclaw plugins install github:is-an-ai/cli`
+- **OpenClaw**: `openclaw plugins install github:is-an-ai-org/cli`
 
 ## Links
 
 - Website: https://is-an.ai
-- Records repo: https://github.com/is-an-ai/is-an.ai
+- Records repo: https://github.com/is-an-ai-org/is-an.ai
 - npm: https://www.npmjs.com/package/is-an-ai
 
 ## License

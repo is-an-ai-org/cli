@@ -17,10 +17,10 @@ function getGhAuthToken(): string | null {
   }
 }
 
-function isJwtExpired(jwt: string): boolean {
+export function isJwtExpired(jwt: string): boolean {
   try {
     const payload = JSON.parse(Buffer.from(jwt.split(".")[1], "base64").toString());
-    return payload.exp * 1000 < Date.now();
+    return typeof payload.exp !== "number" || !Number.isFinite(payload.exp) || payload.exp * 1000 <= Date.now();
   } catch {
     return true;
   }
@@ -29,9 +29,16 @@ function isJwtExpired(jwt: string): boolean {
 export function resolveAuth(preferredMode?: AuthMode): AuthContext {
   const config = loadConfig();
 
+  if (preferredMode === "api") {
+    if (!config?.jwt || isJwtExpired(config.jwt)) {
+      throw new Error("No active API session. Run `is-an-ai login` to authenticate.");
+    }
+    return { mode: "api", jwt: config.jwt };
+  }
+
   // Check JWT first
   if (config?.jwt && !isJwtExpired(config.jwt)) {
-    if (!preferredMode || preferredMode === "api") {
+    if (!preferredMode) {
       return { mode: "api", jwt: config.jwt };
     }
   }
@@ -42,11 +49,6 @@ export function resolveAuth(preferredMode?: AuthMode): AuthContext {
     if (!preferredMode || preferredMode === "pr") {
       return { mode: "pr", githubToken: ghToken };
     }
-  }
-
-  // If preferred mode is api but we only have github token
-  if (preferredMode === "api" && !config?.jwt) {
-    throw new Error("No JWT found. Run `is-an-ai login` first.");
   }
 
   // If preferred mode is pr but no github token
